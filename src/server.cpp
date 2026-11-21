@@ -71,21 +71,19 @@ string ServerSocket::crearRespuesta(string body) const {
   return response;
 }
 
-int main() {
-  ServerSocket serverSocket(5, 1024, 8080);
-
-  // Acepta conexión de un cliente y lo guarda en un descriptor de socket --> clientSocket
+void ServerSocket::aceptarClientes() {
   while (true) {
-    int clientSocket = accept(serverSocket.getSocket(), nullptr, nullptr);  // accept es una operación bloqueante
-    if (clientSocket == -1) return 1;
+    // Acepta conexión de un cliente y lo guarda en un descriptor de socket --> clientSocket
+    int clientSocket = accept(getSocket(), nullptr, nullptr);  // accept es una operación bloqueante
+    if (clientSocket == -1) continue;
 
     // Recepción de los datos por parte del client en el buffer
-    recv(clientSocket, serverSocket.getReferenceToBuffer(), serverSocket.getBufferSize(), 0);
-    std::cout << serverSocket.getReferenceToBuffer() << std::endl;
+    recv(clientSocket, getReferenceToBuffer(), getBufferSize(), 0);
+    std::cout << getReferenceToBuffer() << std::endl;
 
     // Crear y enviar respuesta al cliente en función de lo que solicite ver
     string page{};
-    string aux{serverSocket.getBuffer()[0]};
+    string aux{getBuffer()[0]};
     bool copy{false};
     bool stop{false};
     for (size_t i = 1; !stop; ++i) {
@@ -96,13 +94,13 @@ int main() {
           stop = true;
         else
           page.append(aux);
-      aux = serverSocket.getBuffer()[i];
+      aux = getBuffer()[i];
     }
 
     if (page == "/")
       page = "index.html";
 
-    string response = serverSocket.crearRespuesta(page);
+    string response = crearRespuesta(page);
     if (response == "ERROR") {
       close(clientSocket);
       continue;
@@ -111,6 +109,10 @@ int main() {
 
     close(clientSocket);
   }
+}
 
+int main() {
+  ServerSocket serverSocket(5, 1024, 8080);
+  serverSocket.aceptarClientes();
   return 0;
 }

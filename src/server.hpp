@@ -21,6 +21,8 @@ class ServerSocket {
 
   // Devuelve "ERROR" si da error
   string crearRespuesta(string body) const;
+  // Aceptar conexiones de cliente
+  void aceptarClientes();
 
   // Devuelve el descriptor del socket del server
   int getSocket() const { return socket_; }
