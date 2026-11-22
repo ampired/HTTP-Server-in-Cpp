@@ -7,7 +7,6 @@ using std::string;
 
 class Response {
  public:
-  Response() = default;
   explicit Response(string file);
 
   string getResponse() const { return content; }

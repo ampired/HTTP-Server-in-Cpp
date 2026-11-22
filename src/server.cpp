@@ -27,9 +27,10 @@ ServerSocket::ServerSocket(size_t numConexiones, size_t tam_buffer, size_t port,
   if (listen(socket_, numConexiones) == -1)
     throw std::runtime_error("ERROR: No se puede recibir conexiones");
 
-  responses["index.html"] = Response("index.html");
-  responses["contact.html"] = Response("contact.html");
-  responses["about.html"] = Response("about.html");
+  // Mapa que sirve como "cache" para los archivos estáticos más solicitados
+  responses.emplace("index.html", Response("index.html"));
+  responses.emplace("contact.html", Response("contact.html"));
+  responses.emplace("about.html", Response("about.html"));
 }
 
 ServerSocket::~ServerSocket() {
@@ -54,11 +55,12 @@ void ServerSocket::aceptarClientes_seq() {
     for (size_t i = 1; !stop; ++i) {
       if (aux == "/")
         copy = true;
-      if (copy)
+      if (copy) {
         if (aux == " ")
           stop = true;
         else
           page.append(aux);
+      }
       aux = getBuffer()[i];
     }
 
@@ -85,7 +87,7 @@ void ServerSocket::aceptarClientes_conc(size_t numHilos) {
     if (clientSocket == -1) continue;
 
     boost::asio::post(pool,
-        [=]() {
+        [this, clientSocket]() {
           // Creación de un buffer local en cada hebra para evitar condiciones de carrera
           vector<char> buffer_local(getBufferSize(), 0);
 
@@ -101,11 +103,12 @@ void ServerSocket::aceptarClientes_conc(size_t numHilos) {
           for (size_t i = 1; !stop && i < buffer_local.size(); ++i) {
             if (aux == "/")
               copy = true;
-            if (copy)
+            if (copy) {
               if (aux == " ")
                 stop = true;
               else
                 page.append(aux);
+            }
             aux = buffer_local[i];
           }
 
