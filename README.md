@@ -18,7 +18,7 @@ A simple HTTP/1.1 server built from scratch in modern C++ as a personal learning
 - **Compiler:** `g++` (or any C++17/C++20 compatible compiler)
 - **Build tool:** `make`
 - **Libraries:**
-  - `Boost` (specifically `boost::asio` for the thread pool)
+  - [Boost.Asio](https://github.com/boostorg/asio) (`boost::asio` for the thread pool)
   - `pthread`
 
 On Debian/Ubuntu-based systems, you can install the dependencies with:
