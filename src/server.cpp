@@ -28,9 +28,9 @@ ServerSocket::ServerSocket(size_t numConexiones, size_t tam_buffer, size_t port,
     throw std::runtime_error("ERROR: No se puede recibir conexiones");
 
   // Mapa que sirve como "cache" para los archivos estáticos más solicitados
-  responses.emplace("index.html", Response("index.html"));
-  responses.emplace("contact.html", Response("contact.html"));
-  responses.emplace("about.html", Response("about.html"));
+  vector<string> archivos_cacheados{"index.html", "contact.html", "about.html"};
+  for (auto x : archivos_cacheados)
+    responses.emplace(x, Response(x));
 }
 
 ServerSocket::~ServerSocket() {
