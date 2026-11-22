@@ -29,6 +29,7 @@ ServerSocket::ServerSocket(size_t numConexiones, size_t tam_buffer, size_t port,
 
   responses["index.html"] = Response("index.html");
   responses["contact.html"] = Response("contact.html");
+  responses["about.html"] = Response("about.html");
 }
 
 ServerSocket::~ServerSocket() {
