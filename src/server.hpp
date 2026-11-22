@@ -2,14 +2,19 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <boost/asio.hpp>
 #include <cstddef>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+#include "response.hpp"
+
+using std::map;
 using std::string;
 using std::vector;
 
@@ -19,10 +24,10 @@ class ServerSocket {
   explicit ServerSocket(size_t numConexiones, size_t tam_buffer, size_t port, string ip = "ANY");
   ~ServerSocket();
 
-  // Devuelve "ERROR" si da error
-  string crearRespuesta(string body) const;
-  // Aceptar conexiones de cliente
-  void aceptarClientes();
+  // Aceptar conexiones (secuenciales) de clientes
+  void aceptarClientes_seq();
+  // Aceptar conexiones (concurrnetes) de clientes
+  void aceptarClientes_conc(size_t numHilos);
 
   // Devuelve el descriptor del socket del server
   int getSocket() const { return socket_; }
@@ -40,4 +45,5 @@ class ServerSocket {
   size_t numConexiones;
   size_t tam_buffer;
   vector<char> buffer;
+  map<string, Response> responses;
 };
