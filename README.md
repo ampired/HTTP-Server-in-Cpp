@@ -9,7 +9,7 @@ A simple HTTP/1.1 server built from scratch in modern C++ as a personal learning
 - [x] Basic TCP socket setup and connection handling
 - [x] Basic HTTP request parsing (`GET`)
 - [x] Serving static HTML/CSS files
-- [ ] Multithreading / concurrent connections
+- [x] Multithreading / concurrent connections
 - [ ] Full error handling and status codes (`404`, `500`, etc.)
 - [ ] Code cleanup and refactoring
 
