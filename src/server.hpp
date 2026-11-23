@@ -24,10 +24,8 @@ class ServerSocket {
   explicit ServerSocket(size_t numConexiones, size_t tam_buffer, size_t port, string ip = "ANY");
   ~ServerSocket();
 
-  // Aceptar conexiones (secuenciales) de clientes
-  void aceptarClientes_seq();
-  // Aceptar conexiones (concurrnetes) de clientes
-  void aceptarClientes_conc(size_t numHilos);
+  // Aceptar conexiones (concurrentes) de clientes
+  void aceptarClientes(size_t numHilos);
 
   // Devuelve el descriptor del socket del server
   int getSocket() const { return socket_; }

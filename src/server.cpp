@@ -28,7 +28,7 @@ ServerSocket::ServerSocket(size_t numConexiones, size_t tam_buffer, size_t port,
     throw std::runtime_error("ERROR: No se puede recibir conexiones");
 
   // Mapa que sirve como "cache" para los archivos estáticos más solicitados
-  vector<string> archivos_cacheados{"index.html", "contact.html", "about.html"};
+  vector<string> archivos_cacheados{"/index.html", "/contact.html", "/about.html"};
   for (auto x : archivos_cacheados)
     responses.emplace(x, Response(x));
 }
@@ -37,49 +37,7 @@ ServerSocket::~ServerSocket() {
   close(socket_);
 }
 
-void ServerSocket::aceptarClientes_seq() {
-  while (true) {
-    // Acepta conexión de un cliente y lo guarda en un descriptor de socket --> clientSocket
-    int clientSocket = accept(getSocket(), nullptr, nullptr);  // accept es una operación bloqueante
-    if (clientSocket == -1) continue;
-
-    // Recepción de los datos por parte del client en el buffer
-    recv(clientSocket, getReferenceToBuffer(), getBufferSize(), 0);
-    std::cout << getReferenceToBuffer() << std::endl;
-
-    // Crear y enviar respuesta al cliente en función de lo que solicite ver
-    string page{};
-    string aux{getBuffer()[0]};
-    bool copy{false};
-    bool stop{false};
-    for (size_t i = 1; !stop; ++i) {
-      if (aux == "/")
-        copy = true;
-      if (copy) {
-        if (aux == " ")
-          stop = true;
-        else
-          page.append(aux);
-      }
-      aux = getBuffer()[i];
-    }
-
-    if (page == "/")
-      page = "index.html";
-
-    string response = Response(page).getResponse();
-
-    if (response == "ERROR") {
-      close(clientSocket);
-      continue;
-    }
-    send(clientSocket, response.data(), response.size(), 0);
-
-    close(clientSocket);
-  }
-}
-
-void ServerSocket::aceptarClientes_conc(size_t numHilos) {
+void ServerSocket::aceptarClientes(size_t numHilos) {
   boost::asio::thread_pool pool(numHilos);
 
   while (true) {
@@ -92,7 +50,11 @@ void ServerSocket::aceptarClientes_conc(size_t numHilos) {
           vector<char> buffer_local(getBufferSize(), 0);
 
           // Recepción de los datos por parte del client en el buffer
-          recv(clientSocket, buffer_local.data(), buffer_local.size(), 0);
+          ssize_t bytes = recv(clientSocket, buffer_local.data(), buffer_local.size(), 0);
+          if (bytes <= 0) {
+            close(clientSocket);
+            return;
+          }
           std::cout << buffer_local.data() << std::endl;
 
           // Crear y enviar respuesta al cliente en función de lo que solicite ver
@@ -127,16 +89,52 @@ void ServerSocket::aceptarClientes_conc(size_t numHilos) {
             return;
           }
 
-          send(clientSocket, response.data(), response.size(), 0);
+          // Mejor envolver al send en un while por si hay alguna pérdida de bytes al enviar los datos
+          size_t total_bytes_enviados = 0;
+          while (total_bytes_enviados < response.size()) {
+            ssize_t bytes_enviados = send(clientSocket, response.data(), response.size(), 0);
+
+            if (bytes_enviados <= 0) {
+              close(clientSocket);
+              break;
+            }
+
+            total_bytes_enviados += bytes_enviados;
+          }
 
           close(clientSocket);
         });
   }
 }
 
-int main() {
-  ServerSocket serverSocket(5, 1024, 8080);
-  // serverSocket.aceptarClientes_seq();
-  serverSocket.aceptarClientes_conc(8);
+int main(int argc, char* argv[]) {
+  // Valores por defecto
+  size_t numConexiones = 128;
+  size_t tam_buffer = 4096;
+  size_t puerto = 8080;
+
+  int opcion;
+  while ((opcion = getopt(argc, argv, "hp:n:b:")) != -1) {
+    switch (opcion) {
+      case 'h':
+        std::cout << "Uso: " << argv[0] << " [-h] [-p puerto] [-n numConexiones] [-b tamBuffer]" << std::endl;
+        return 0;
+      case 'p':
+        puerto = std::stoi(optarg);
+        break;
+      case 'n':
+        numConexiones = std::stoi(optarg);
+        break;
+      case 'b':
+        tam_buffer = std::stoi(optarg);
+        break;
+      case '?': // Se ejecuta si pasan una opción desconocida o falta un valor
+        std::cout << "Uso: " << argv[0] << " [-h] [-p puerto] [-n numConexiones] [-b tamBuffer]" << std::endl;
+        return 1;
+    }
+  }
+
+  ServerSocket serverSocket(numConexiones, tam_buffer, puerto);
+  serverSocket.aceptarClientes(8);
   return 0;
 }
